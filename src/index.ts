@@ -11,5 +11,5 @@ client.on("ready", () => {
 
 client.on("message", (message: any) => {
     if (message.author.bot) return;
-    message.channel.send("silence");
+    message.channel.send("https://c.tenor.com/N_5w43i-o4wAAAAC/omg-gimzie.gif");
 });
