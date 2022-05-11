@@ -197,25 +197,25 @@ export class GuildHandler {
         else if (command.toLowerCase().startsWith("response ")) {
             this.setResponse(command.substring("response ".length), message);
         }
-        else if (command.toLowerCase().startsWith("addChannel ")) {
+        else if (command.toLowerCase().startsWith("addchannel ")) {
             this.addChannel(command.substring("addChannel ".length), message);
         }
-        else if (command.toLowerCase().startsWith("removeChannel ")) {
+        else if (command.toLowerCase().startsWith("removechannel ")) {
             this.removeChannel(command.substring("removeChannel ".length), message);
         }
-        else if (command.toLowerCase().startsWith("addRole ")) {
+        else if (command.toLowerCase().startsWith("addrole ")) {
             this.addRole(command.substring("addRole ".length), message);
         }
-        else if (command.toLowerCase().startsWith("removeRole ")) {
+        else if (command.toLowerCase().startsWith("removerole ")) {
             this.removeRole(command.substring("removeRole ".length), message);
         }
-        else if (command.toLowerCase().startsWith("addUser ")) {
+        else if (command.toLowerCase().startsWith("adduser ")) {
             this.addUser(command.substring("addUser ".length), message);
         }
-        else if (command.toLowerCase().startsWith("removeUser ")) {
+        else if (command.toLowerCase().startsWith("removeuser ")) {
             this.removeUser(command.substring("removeUser ".length), message);
         }
-        else if (command.toLowerCase().startsWith("muteTime ")) {
+        else if (command.toLowerCase().startsWith("mutetime ")) {
 
         }
         else {

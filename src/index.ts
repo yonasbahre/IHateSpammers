@@ -27,7 +27,6 @@ client.on("message", (message: Message) => {
     // Handle if message is a command
     if (guildHandler?.isCommand(message)) {
         guildHandler.parseCommand(message);
-        // message.channel.send("Command processed.");
         return;
     }
 
