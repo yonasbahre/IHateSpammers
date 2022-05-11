@@ -32,9 +32,9 @@ client.on("message", (message: Message) => {
     }
 
     // Check if spam
-    
-    // delete later, print test?
-    if (message.content.includes("do you hate spammers")) {
-        message.channel.send(guildHandler?.response as string);
+    if (guildHandler?.channels.has(message.channelId)) {
+        let channelHandler: ChannelHandler = guildHandler.channels.get(message.channelId) as ChannelHandler;
+        channelHandler.checkMessage(message);
     }
+    
 });

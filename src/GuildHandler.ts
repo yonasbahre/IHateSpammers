@@ -1,4 +1,4 @@
-import { Channel, Guild, GuildMember, GuildMemberRoleManager, Message, Role, ThreadChannel } from "discord.js";
+import { Channel, Guild, GuildChannel, GuildMember, GuildMemberRoleManager, Message, Role, ThreadChannel } from "discord.js";
 import { ChannelHandler } from "./ChannelHandler";
 const { Client } = require('discord.js');
 
@@ -8,8 +8,9 @@ export class GuildHandler {
     muteTime: number = 0;
     guild: Guild;
  
-    // Channels, roles, and users are all stored by ID
-    channels: Set<string>; 
+    // Channels and roles are stored by ID
+    // Users are stored by tag
+    channels: Map<string, ChannelHandler>; 
     roles: Set<string>; 
     users: Set<string>; 
 
@@ -17,7 +18,7 @@ export class GuildHandler {
         this.guild = guild;
         this.users = new Set<string>([guild.ownerId]);
         this.roles = new Set<string>();
-        this.channels = new Set<string>();
+        this.channels = new Map<string, ChannelHandler>();
     }
 
     // Helper functions for commands
@@ -55,9 +56,9 @@ export class GuildHandler {
     addChannel(arg: string, message: Message): void {
         let changed: boolean = false;
 
-        this.guild.channels.cache.forEach((channel) => {
+        this.guild.channels.cache.forEach((channel: GuildChannel | ThreadChannel) => {
             if (channel.name === arg) {
-                this.channels.add(channel.id);
+                this.channels.set(channel.id, new ChannelHandler(this));
                 changed = true;
                 return;
             }
@@ -75,7 +76,7 @@ export class GuildHandler {
         let changed: boolean = false;
         let id: string = "";
 
-        this.guild.channels.cache.forEach((channel) => {
+        this.guild.channels.cache.forEach((channel: GuildChannel | ThreadChannel) => {
             if (channel.name === arg) {
                 id = channel.id;
                 return;
@@ -95,6 +96,69 @@ export class GuildHandler {
         }
     }
 
+    addRole (arg: string, message: Message): void {
+        let changed: boolean = false;
+        this.guild.roles.cache.forEach((role: Role) => {
+            if (role.name === arg) {
+                this.roles.add(role.id);
+                changed = true;
+                return;
+            }
+        });
+
+        if (changed) {
+            message.channel.send("Changed successfully!");
+        }
+        else {
+            message.channel.send("Sorry, we couldn't find that role! Please try again.");
+        }
+    }
+
+    removeRole (arg: string, message: Message): void {
+        let changed: boolean = false;
+        let id: string = "";
+        this.guild.roles.cache.forEach((role: Role) => {
+            if (role.name === arg) id = role.id;
+        });
+
+        if (this.roles.has(id)) {
+            this.roles.delete(id);
+            changed = true;
+        }
+
+        if (changed) {
+            message.channel.send("Changed successfully!");
+        }
+        else {
+            message.channel.send("Sorry, we weren't able to remove that role.");
+        }
+    }
+
+    addUser (arg: string, message: Message): void {
+        this.users.add(arg);
+
+        if (this.users.has(arg)) {
+            message.channel.send("Changed successfully!");
+        }
+        else {
+            message.channel.send("Sorry, we weren't able to add that user. Please try again.");
+        }
+    }
+
+    removeUser (arg: string, message: Message): void {
+        if (this.users.has(arg)) {
+            this.users.delete(arg);
+        }
+
+        if (!this.users.has(arg)) {
+            message.channel.send("Changed successfully!");
+        }
+        else {
+            message.channel.send("Sorry, we weren't able to add that user. Please try again.");
+        }
+    }
+
+
 
     //
     //
@@ -109,7 +173,7 @@ export class GuildHandler {
             return true;
         }
 
-        if (this.users.has(message.author.id)) {
+        if (this.users.has(message.author.tag)) {
             return true;
         }
 
@@ -127,31 +191,31 @@ export class GuildHandler {
 
         let command: string = message.content.substring(this.prefix.length);
 
-        if (command.startsWith("repeats ")) {
+        if (command.toLowerCase().startsWith("repeats ")) {
             this.setRepeats(command.substring("repeats ".length), message);
         }
-        else if (command.startsWith("response ")) {
+        else if (command.toLowerCase().startsWith("response ")) {
             this.setResponse(command.substring("response ".length), message);
         }
-        else if (command.startsWith("addChannel ")) {
+        else if (command.toLowerCase().startsWith("addChannel ")) {
             this.addChannel(command.substring("addChannel ".length), message);
         }
-        else if (command.startsWith("removeChannel ")) {
+        else if (command.toLowerCase().startsWith("removeChannel ")) {
             this.removeChannel(command.substring("removeChannel ".length), message);
         }
-        else if (command.startsWith("addRole ")) {
-
+        else if (command.toLowerCase().startsWith("addRole ")) {
+            this.addRole(command.substring("addRole ".length), message);
         }
-        else if (command.startsWith("removeRole ")) {
-
+        else if (command.toLowerCase().startsWith("removeRole ")) {
+            this.removeRole(command.substring("removeRole ".length), message);
         }
-        else if (command.startsWith("addUser ")) {
-
+        else if (command.toLowerCase().startsWith("addUser ")) {
+            this.addUser(command.substring("addUser ".length), message);
         }
-        else if (command.startsWith("removeUser ")) {
-
+        else if (command.toLowerCase().startsWith("removeUser ")) {
+            this.removeUser(command.substring("removeUser ".length), message);
         }
-        else if (command.startsWith("muteTime ")) {
+        else if (command.toLowerCase().startsWith("muteTime ")) {
 
         }
         else {
