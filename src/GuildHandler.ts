@@ -1,4 +1,4 @@
-import { Guild, GuildMember, GuildMemberRoleManager, Message, Role } from "discord.js";
+import { Channel, Guild, GuildMember, GuildMemberRoleManager, Message, Role, ThreadChannel } from "discord.js";
 import { ChannelHandler } from "./ChannelHandler";
 const { Client } = require('discord.js');
 
@@ -7,16 +7,17 @@ export class GuildHandler {
     response: string = "pls stop";
     muteTime: number = 0;
     guild: Guild;
-
-    // Make these later
-    // channels: Set;
-    roles: Set<string>; // stores role IDs
-    users: Set<string>; // stores user IDs
+ 
+    // Channels, roles, and users are all stored by ID
+    channels: Set<string>; 
+    roles: Set<string>; 
+    users: Set<string>; 
 
     constructor(guild: Guild) {
         this.guild = guild;
         this.users = new Set<string>([guild.ownerId]);
         this.roles = new Set<string>();
+        this.channels = new Set<string>();
     }
 
     // Helper functions for commands
@@ -51,8 +52,50 @@ export class GuildHandler {
         this.checkChangeSuccess(this.response, arg, message);
     }
 
+    addChannel(arg: string, message: Message): void {
+        let changed: boolean = false;
 
-    
+        this.guild.channels.cache.forEach((channel) => {
+            if (channel.name === arg) {
+                this.channels.add(channel.id);
+                changed = true;
+                return;
+            }
+        });
+        
+        if (changed) {
+            message.channel.send("Changed successfully!");
+        }
+        else {
+            message.channel.send("Sorry, we couldn't find that channel on your server, please try again.");
+        }
+    }
+
+    removeChannel (arg: string, message: Message): void {
+        let changed: boolean = false;
+        let id: string = "";
+
+        this.guild.channels.cache.forEach((channel) => {
+            if (channel.name === arg) {
+                id = channel.id;
+                return;
+            }
+        });
+
+        if (this.channels.has(id)) {
+            this.channels.delete(id);
+            changed = true;
+        }
+        
+        if (changed) {
+            message.channel.send("Changed successfully!");
+        }
+        else {
+            message.channel.send("Sorry, you haven't added the bot to this channel.");
+        }
+    }
+
+
     //
     //
     // Command Handling
@@ -91,10 +134,10 @@ export class GuildHandler {
             this.setResponse(command.substring("response ".length), message);
         }
         else if (command.startsWith("addChannel ")) {
-
+            this.addChannel(command.substring("addChannel ".length), message);
         }
         else if (command.startsWith("removeChannel ")) {
-
+            this.removeChannel(command.substring("removeChannel ".length), message);
         }
         else if (command.startsWith("addRole ")) {
 
