@@ -40,7 +40,7 @@ export class GuildHandler {
         let newRepeat: number = Number(arg);
 
         if (isNaN(newRepeat)) {
-            message.channel.send("This command requires a number as it's argument.");
+            message.channel.send("This command requires a number as its argument.");
             return;
         }
 
@@ -158,7 +158,17 @@ export class GuildHandler {
         }
     }
 
+    setMuteTime (arg: string, message: Message): void {
+        let newMuteTime: number = Number(arg);
 
+        if (isNaN(newMuteTime)) {
+            message.channel.send("This command requires a number as its argument.");
+            return;
+        }
+
+        this.muteTime = newMuteTime;
+        this.checkChangeSuccess(this.muteTime, newMuteTime, message);        
+    }
 
     //
     //
@@ -216,7 +226,7 @@ export class GuildHandler {
             this.removeUser(command.substring("removeUser ".length), message);
         }
         else if (command.toLowerCase().startsWith("mutetime ")) {
-
+            this.setMuteTime(command.substring("muteTime ".length), message);
         }
         else {
             message.channel.send("Sorry, that's not a valid command.");
