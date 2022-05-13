@@ -43,15 +43,11 @@ export class ChannelHandler {
 
         // timeout spammers
         this.spammers.forEach((spammer: GuildMember) => {
-            try {
-                spammer.timeout(this.guildHandler.muteTime * 60 * 1000);
-            } catch (error: any) {
-                if (spammer.id === this.guildHandler.guild.ownerId) {
-                    console.log("Failed attempt to timeout guild owner.");
-                }
-                else {
-                    console.log("Unknown timeout error occurred.");
-                }
+            if (this.guildHandler.botMember.roles.highest.comparePositionTo(spammer.roles.highest) > 0) {
+                spammer.timeout(this.guildHandler.muteTime * 60 * 100);
+            }
+            else {
+                console.log(`Unable to timeout ${spammer.user.tag} as their role is too high`);
             }
         });
         
@@ -59,11 +55,4 @@ export class ChannelHandler {
         this.spammers.clear();
     }
 
-    // Handling mutes:
-    // Collect offender list
-    // On response, timeout() them
-    
-    // For each message, get guildMember object
-    // Add to set if repeat
-    // When repeats limit reached, forEach guildMember, timeout muteTime * 60 * 1000
 }

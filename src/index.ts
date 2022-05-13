@@ -16,7 +16,7 @@ client.on("ready", () => {
 
     // Instantiate GuildHandlers for each Guild the bot is in
     client.guilds.cache.forEach((guild: Guild) => {
-        guilds.set(guild.id, new GuildHandler(guild));
+        guilds.set(guild.id, new GuildHandler(guild, client.user));
     });
 });
 

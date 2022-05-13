@@ -1,4 +1,4 @@
-import { Channel, Guild, GuildChannel, GuildMember, GuildMemberRoleManager, Message, Role, ThreadChannel } from "discord.js";
+import { Channel, Guild, GuildChannel, GuildMember, GuildMemberRoleManager, Message, Role, ThreadChannel, User } from "discord.js";
 import { ChannelHandler } from "./ChannelHandler";
 const { Client } = require('discord.js');
 
@@ -7,6 +7,7 @@ export class GuildHandler {
     response: string = "pls stop";
     muteTime: number = 0;
     guild: Guild;
+    botMember: GuildMember;
  
     // Channels and roles are stored by ID
     // Users are stored by tag
@@ -14,11 +15,12 @@ export class GuildHandler {
     roles: Set<string>;                     // key is role name
     users: Set<string>;                     // key is user tag
 
-    constructor(guild: Guild) {
+    constructor(guild: Guild, botUser: User) {
         this.guild = guild;
         this.users = new Set<string>([guild.ownerId]);
         this.roles = new Set<string>();
         this.channels = new Map<string, ChannelHandler>();
+        this.botMember = this.guild.members.cache.get(botUser.id) as GuildMember;
     }
 
     // Helper functions for commands
