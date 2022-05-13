@@ -45,7 +45,7 @@ export class ChannelHandler {
         let botHighest: Role = this.guildHandler.botMember.roles.highest;   // highest role the bot has
         this.spammers.forEach((spammer: GuildMember) => {
             if (spammer.id != this.guildHandler.guild.ownerId && botHighest.comparePositionTo(spammer.roles.highest) > 0) {
-                spammer.timeout(this.guildHandler.muteTime * 60 * 100);
+                spammer.timeout(this.guildHandler.muteTime * 60 * 1000);
             }
             else {
                 console.log(`Unable to timeout ${spammer.user.tag} as their role is too high`);
