@@ -10,9 +10,9 @@ export class GuildHandler {
  
     // Channels and roles are stored by ID
     // Users are stored by tag
-    channels: Map<string, ChannelHandler>; 
-    roles: Set<string>; 
-    users: Set<string>; 
+    channels: Map<string, ChannelHandler>;  // key is channel ID
+    roles: Set<string>;                     // key is role name
+    users: Set<string>;                     // key is user tag
 
     constructor(guild: Guild) {
         this.guild = guild;
@@ -99,8 +99,8 @@ export class GuildHandler {
     addRole (arg: string, message: Message): void {
         let changed: boolean = false;
         this.guild.roles.cache.forEach((role: Role) => {
-            if (role.name === arg) {
-                this.roles.add(role.id);
+            if (role.name.toLowerCase() === arg.toLowerCase()) {
+                this.roles.add(role.name);
                 changed = true;
                 return;
             }
@@ -116,13 +116,13 @@ export class GuildHandler {
 
     removeRole (arg: string, message: Message): void {
         let changed: boolean = false;
-        let id: string = "";
+        let name: string = "";
         this.guild.roles.cache.forEach((role: Role) => {
-            if (role.name === arg) id = role.id;
+            if (role.name === arg) name = role.name;
         });
 
-        if (this.roles.has(id)) {
-            this.roles.delete(id);
+        if (this.roles.has(name)) {
+            this.roles.delete(name);
             changed = true;
         }
 
@@ -188,12 +188,25 @@ export class GuildHandler {
         }
 
         // TODO: test later
-        let guildMember: GuildMember = this.guild.members.cache.get(message.author.id) as GuildMember;
-        guildMember.roles.cache.forEach((role: Role) => {
-            if (this.roles.has(role.id)) return true;
-        });
+        /*
+        message.member?.roles.cache.forEach((role: Role) => {
+            console.log(`Testing role ${role.name}`);
+            if (this.roles.has(role.name)) return true;
+            console.log(`No match found for role ${role.name}`);
+        }); */
 
-        return false;
+        let retval: boolean = false;
+        let memberRoles = message.member?.roles.cache;
+        if (memberRoles !== undefined) {
+            for (let role of memberRoles.values()) {
+                if (this.roles.has(role.name)) {
+                    retval = true;
+                    break;
+                }
+            }
+        }
+
+        return retval;
     }
 
     parseCommand(message: Message): void {

@@ -1,4 +1,4 @@
-import { Guild, GuildMember, Message } from "discord.js";
+import { DiscordAPIError, Guild, GuildMember, Message } from "discord.js";
 import { GuildHandler } from "./GuildHandler";
 const { Client } = require('discord.js');
 
@@ -34,16 +34,27 @@ export class ChannelHandler {
 
         if (this.repeatCount === this.guildHandler.repeats) {
             this.respond(message);
-
         }
 
     }
 
     respond(message: Message): void {
         message.channel.send(this.guildHandler.response);
+
+        // timeout spammers
         this.spammers.forEach((spammer: GuildMember) => {
-            spammer.timeout(this.guildHandler.muteTime * 60 * 1000);
+            try {
+                spammer.timeout(this.guildHandler.muteTime * 60 * 1000);
+            } catch (error: any) {
+                if (spammer.id === this.guildHandler.guild.ownerId) {
+                    console.log("Failed attempt to timeout guild owner.");
+                }
+                else {
+                    console.log("Unknown timeout error occurred.");
+                }
+            }
         });
+        
         this.repeatCount = 1;
         this.spammers.clear();
     }
