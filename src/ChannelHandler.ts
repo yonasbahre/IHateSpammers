@@ -1,4 +1,4 @@
-import { DiscordAPIError, Guild, GuildMember, Message } from "discord.js";
+import { DiscordAPIError, Guild, GuildMember, Message, Role } from "discord.js";
 import { GuildHandler } from "./GuildHandler";
 const { Client } = require('discord.js');
 
@@ -42,8 +42,9 @@ export class ChannelHandler {
         message.channel.send(this.guildHandler.response);
 
         // timeout spammers
+        let botHighest: Role = this.guildHandler.botMember.roles.highest;   // highest role the bot has
         this.spammers.forEach((spammer: GuildMember) => {
-            if (this.guildHandler.botMember.roles.highest.comparePositionTo(spammer.roles.highest) > 0) {
+            if (spammer.id != this.guildHandler.guild.ownerId && botHighest.comparePositionTo(spammer.roles.highest) > 0) {
                 spammer.timeout(this.guildHandler.muteTime * 60 * 100);
             }
             else {
