@@ -172,6 +172,17 @@ export class GuildHandler {
         this.checkChangeSuccess(this.muteTime, newMuteTime, message);        
     }
 
+    // Kicks bot from guild
+    kickMe (message: Message): void {
+        if (message.author.id !== this.guild.ownerId) {
+            message.channel.send("Sorry, only the server owner can use this command.");
+            return;
+        }
+
+        message.channel.send("Goodbye!");
+        this.guild.leave();
+    }
+
     //
     //
     // Command Handling
@@ -242,6 +253,9 @@ export class GuildHandler {
         }
         else if (command.toLowerCase().startsWith("mutetime ")) {
             this.setMuteTime(command.substring("muteTime ".length), message);
+        }
+        else if (command.toLowerCase() === "kickme") {
+            this.kickMe(message);
         }
         else {
             message.channel.send("Sorry, that's not a valid command.");

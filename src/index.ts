@@ -8,6 +8,11 @@ const { Client, Intents } = require('discord.js');
 const client = new Client( {intents: [Intents.FLAGS.GUILDS, Intents.FLAGS.GUILD_MESSAGES]} );
 let guilds = new Map<Snowflake, GuildHandler>();
 
+const removeGuild = (id: string): void => {
+    guilds.delete(id);
+    console.log(guilds.size);
+}
+
 client.login(process.env.TOKEN);
 
 // Startup tasks for bot
@@ -20,6 +25,17 @@ client.on("ready", () => {
     });
 });
 
+// Handle on Guild Join/Delete
+client.on("guildCreate", (guild: Guild) => {
+    guilds.set(guild.id, new GuildHandler(guild, client.user));
+});
+
+client.on("guildDelete", (guild: Guild) => {
+    guilds.delete(guild.id);
+})
+
+
+// Message parser
 client.on("message", (message: Message) => {
     if (message.author.bot) return;
     let guildHandler: GuildHandler | undefined = guilds.get(message.guildId as string);

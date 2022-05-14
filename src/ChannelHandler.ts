@@ -22,7 +22,7 @@ export class ChannelHandler {
         this.currMsg = message.content;
         this.currUser = message.member;
 
-        if (this.prevMsg !== this.currMsg) {
+        if (this.prevMsg !== this.currMsg && this.guildHandler.repeats !== 1) {
             this.repeatCount = 1;
             this.spammers.clear();
         }
@@ -32,7 +32,7 @@ export class ChannelHandler {
             if (this.currUser) this.spammers.add(this.currUser);
         }
 
-        if (this.repeatCount === this.guildHandler.repeats) {
+        if (this.repeatCount >= this.guildHandler.repeats && this.guildHandler.repeats !== 0) {
             this.respond(message);
         }
 
@@ -53,6 +53,7 @@ export class ChannelHandler {
         });
         
         this.repeatCount = 1;
+        this.currMsg = "";
         this.spammers.clear();
     }
 
