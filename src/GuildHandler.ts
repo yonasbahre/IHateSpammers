@@ -9,8 +9,6 @@ export class GuildHandler {
     guild: Guild;
     botMember: GuildMember;
  
-    // Channels and roles are stored by ID
-    // Users are stored by tag
     channels: Map<string, ChannelHandler>;  // key is channel ID
     roles: Set<string>;                     // key is role name
     users: Set<string>;                     // key is user tag
@@ -192,21 +190,8 @@ export class GuildHandler {
     }
 
     validateUser(message: Message): boolean {
-        if (message.author.id === this.guild.ownerId) {
-            return true;
-        }
-
-        if (this.users.has(message.author.tag)) {
-            return true;
-        }
-
-        // TODO: test later
-        /*
-        message.member?.roles.cache.forEach((role: Role) => {
-            console.log(`Testing role ${role.name}`);
-            if (this.roles.has(role.name)) return true;
-            console.log(`No match found for role ${role.name}`);
-        }); */
+        if (message.author.id === this.guild.ownerId) return true;
+        if (this.users.has(message.author.tag)) return true;
 
         let retval: boolean = false;
         let memberRoles = message.member?.roles.cache;
