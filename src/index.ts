@@ -4,6 +4,10 @@ import { GuildHandler } from "./GuildHandler";
 
 require("dotenv").config();
 const { Client, Intents } = require('discord.js');
+const mongoose = require('mongoose');
+
+mongoose.connect("mongodb://localhost/ihs", () => {console.log("Connected to database.")});
+
 
 const client = new Client( {intents: [Intents.FLAGS.GUILDS, Intents.FLAGS.GUILD_MESSAGES]} );
 let guilds = new Map<Snowflake, GuildHandler>();
@@ -23,14 +27,20 @@ client.on("ready", () => {
     client.guilds.cache.forEach((guild: Guild) => {
         guilds.set(guild.id, new GuildHandler(guild, client.user));
     });
+
+    guilds.forEach((guild: GuildHandler) => {
+        guild.loadFromDB();
+    });
 });
 
 // Handle on Guild Join/Delete
 client.on("guildCreate", (guild: Guild) => {
     guilds.set(guild.id, new GuildHandler(guild, client.user));
+    guilds.get(guild.id)?.addToDB();
 });
 
 client.on("guildDelete", (guild: Guild) => {
+    guilds.get(guild.id)?.removeFromDB();
     guilds.delete(guild.id);
 })
 

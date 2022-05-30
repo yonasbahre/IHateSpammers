@@ -1,6 +1,9 @@
 import { Channel, Guild, GuildChannel, GuildMember, GuildMemberRoleManager, Message, Role, ThreadChannel, User } from "discord.js";
 import { ChannelHandler } from "./ChannelHandler";
 const { Client } = require('discord.js');
+import { Model } from "mongoose";
+import GuildModel from "./GuildModel";
+
 
 export class GuildHandler {
     repeats: number = 0;
@@ -15,11 +18,59 @@ export class GuildHandler {
 
     constructor(guild: Guild, botUser: User) {
         this.guild = guild;
-        this.users = new Set<string>([guild.ownerId]);
+        this.users = new Set<string>();
         this.roles = new Set<string>();
         this.channels = new Map<string, ChannelHandler>();
         this.botMember = this.guild.members.cache.get(botUser.id) as GuildMember;
     }
+
+
+
+    //
+    //
+    // Database Handling
+    async addToDB(): Promise<void> {
+        await GuildModel.create({
+            _id: this.guild.id,
+            repeats : this.repeats,
+            response: this.response,
+            muteTime: this.muteTime,
+            channels: Array.from(this.channels.values()),
+            roles: Array.from(this.roles.values()),
+            users: Array.from(this.users.values())
+        });
+    }
+
+    async removeFromDB(): Promise<void> {
+        await GuildModel.deleteOne({_id: this.guild.id});
+    }
+
+    async loadFromDB(): Promise<void> {
+        let exists = await GuildModel.exists({_id: this.guild.id});
+
+        if (!exists) {
+            console.log(`New guild ${this.guild.name} detected! Adding to database.`);
+            this.addToDB();
+        }
+        else {
+            console.log(`Guild ${this.guild.name} already in database. Loading.`);
+            const query: any = await GuildModel.find({_id: this.guild.id});
+            if (query.length) {
+                console.log(`(Before) repeats: ${this.repeats}`);
+                this.repeats = query[0].repeats;
+                this.response = query[0].response;
+                this.muteTime = query[0].muteTime;
+                this.channels = new Map(query[0].channels?.map((channel: string) => {
+                    return [channel, new ChannelHandler(this)]
+                }));
+                this.roles = new Set(query[0].roles);
+                this.users = new Set(query[0].users);
+                console.log(`(After) repeats: ${this.repeats}`);
+            }
+        }
+    }
+
+
 
     // Helper functions for commands
     checkChangeSuccess(old: any, updated: any, message: Message): void {
@@ -36,7 +87,7 @@ export class GuildHandler {
     //
     //
     // Commands
-    setRepeats(arg: string, message: Message): void {
+    async setRepeats(arg: string, message: Message): Promise<void> {
         let newRepeat: number = Number(arg);
 
         if (isNaN(newRepeat)) {
@@ -45,26 +96,33 @@ export class GuildHandler {
         }
 
         this.repeats = newRepeat;
+        await GuildModel.updateOne({_id: this.guild.id}, {$set: {repeats: this.repeats}});
+
         this.checkChangeSuccess(this.repeats, newRepeat, message);
     }
 
-    setResponse(arg: string, message: Message): void {
+    async setResponse(arg: string, message: Message): Promise<void> {
         this.response = arg;
+        await GuildModel.updateOne({_id: this.guild.id}, {$set: {response: this.response}});
         this.checkChangeSuccess(this.response, arg, message);
     }
 
-    addChannel(arg: string, message: Message): void {
+    async addChannel(arg: string, message: Message): Promise<void> {
         let changed: boolean = false;
+        let channelID: string = "";
 
         this.guild.channels.cache.forEach((channel: GuildChannel | ThreadChannel) => {
             if (channel.name === arg) {
+                channelID = channel.id;
                 this.channels.set(channel.id, new ChannelHandler(this));
                 changed = true;
                 return;
             }
         });
         
+
         if (changed) {
+            await GuildModel.updateOne({_id: this.guild.id}, {$push: {channels: channelID}});
             message.channel.send("Changed successfully!");
         }
         else {
@@ -72,19 +130,20 @@ export class GuildHandler {
         }
     }
 
-    removeChannel (arg: string, message: Message): void {
+    async removeChannel (arg: string, message: Message): Promise<void> {
         let changed: boolean = false;
-        let id: string = "";
+        let channelID: string = "";
 
         this.guild.channels.cache.forEach((channel: GuildChannel | ThreadChannel) => {
             if (channel.name === arg) {
-                id = channel.id;
+                channelID = channel.id;
                 return;
             }
         });
 
-        if (this.channels.has(id)) {
-            this.channels.delete(id);
+        if (this.channels.has(channelID)) {
+            this.channels.delete(channelID);
+            await GuildModel.updateOne({_id: this.guild.id}, {$pull: {channels: channelID}});
             changed = true;
         }
         
@@ -96,7 +155,7 @@ export class GuildHandler {
         }
     }
 
-    addRole (arg: string, message: Message): void {
+    async addRole (arg: string, message: Message): Promise<void> {
         let changed: boolean = false;
         this.guild.roles.cache.forEach((role: Role) => {
             if (role.name.toLowerCase() === arg.toLowerCase()) {
@@ -107,6 +166,7 @@ export class GuildHandler {
         });
 
         if (changed) {
+            await GuildModel.updateOne({_id: this.guild.id}, {$push: {roles: arg}});
             message.channel.send("Changed successfully!");
         }
         else {
@@ -114,7 +174,7 @@ export class GuildHandler {
         }
     }
 
-    removeRole (arg: string, message: Message): void {
+    async removeRole (arg: string, message: Message): Promise<void> {
         let changed: boolean = false;
         let name: string = "";
         this.guild.roles.cache.forEach((role: Role) => {
@@ -123,6 +183,7 @@ export class GuildHandler {
 
         if (this.roles.has(name)) {
             this.roles.delete(name);
+            await GuildModel.updateOne({_id: this.guild.id}, {$pull: {roles: arg}});
             changed = true;
         }
 
@@ -134,10 +195,11 @@ export class GuildHandler {
         }
     }
 
-    addUser (arg: string, message: Message): void {
+    async addUser (arg: string, message: Message): Promise<void> {
         this.users.add(arg);
 
         if (this.users.has(arg)) {
+            await GuildModel.updateOne({_id: this.guild.id}, {$push: {users: arg}});
             message.channel.send("Changed successfully!");
         }
         else {
@@ -145,20 +207,21 @@ export class GuildHandler {
         }
     }
 
-    removeUser (arg: string, message: Message): void {
+    async removeUser (arg: string, message: Message): Promise<void> {
         if (this.users.has(arg)) {
             this.users.delete(arg);
-        }
 
-        if (!this.users.has(arg)) {
-            message.channel.send("Changed successfully!");
-        }
-        else {
-            message.channel.send("Sorry, we weren't able to add that user. Please try again.");
+            if (!this.users.has(arg)) {
+                await GuildModel.updateOne({_id: this.guild.id}, {$pull: {users: arg}});
+                message.channel.send("Changed successfully!");
+            }
+            else {
+                message.channel.send("Sorry, we weren't able to add that user. Please try again.");
+            }
         }
     }
 
-    setMuteTime (arg: string, message: Message): void {
+    async setMuteTime (arg: string, message: Message): Promise<void> {
         let newMuteTime: number = Number(arg);
 
         if (isNaN(newMuteTime)) {
@@ -167,6 +230,7 @@ export class GuildHandler {
         }
 
         this.muteTime = newMuteTime;
+        await GuildModel.updateOne({_id: this.guild.id}, {$set: {muteTime: this.muteTime}});
         this.checkChangeSuccess(this.muteTime, newMuteTime, message);        
     }
 
@@ -181,6 +245,9 @@ export class GuildHandler {
         this.guild.leave();
     }
 
+
+
+    
     //
     //
     // Command Handling
