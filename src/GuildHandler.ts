@@ -1,9 +1,7 @@
-import { Channel, Guild, GuildChannel, GuildMember, GuildMemberRoleManager, Message, Role, ThreadChannel, User } from "discord.js";
+import { Guild, GuildChannel, GuildMember, Message, Role, ThreadChannel, User } from "discord.js";
 import { ChannelHandler } from "./ChannelHandler";
-const { Client } = require('discord.js');
-import { Model } from "mongoose";
 import GuildModel from "./GuildModel";
-
+require("dotenv").config();
 
 export class GuildHandler {
     repeats: number = 0;
@@ -17,6 +15,10 @@ export class GuildHandler {
     users: Set<string>;                     // key is user tag
 
     constructor(guild: Guild, botUser: User) {
+        if (guild.name == process.env.BLESSEDGUILD) {
+            this.response = process.env.BLESSEDGIF as string;
+        }
+
         this.guild = guild;
         this.users = new Set<string>();
         this.roles = new Set<string>();
@@ -49,14 +51,11 @@ export class GuildHandler {
         let exists = await GuildModel.exists({_id: this.guild.id});
 
         if (!exists) {
-            console.log(`New guild ${this.guild.name} detected! Adding to database.`);
             this.addToDB();
         }
         else {
-            console.log(`Guild ${this.guild.name} already in database. Loading.`);
             const query: any = await GuildModel.find({_id: this.guild.id});
             if (query.length) {
-                console.log(`(Before) repeats: ${this.repeats}`);
                 this.repeats = query[0].repeats;
                 this.response = query[0].response;
                 this.muteTime = query[0].muteTime;
@@ -65,7 +64,6 @@ export class GuildHandler {
                 }));
                 this.roles = new Set(query[0].roles);
                 this.users = new Set(query[0].users);
-                console.log(`(After) repeats: ${this.repeats}`);
             }
         }
     }

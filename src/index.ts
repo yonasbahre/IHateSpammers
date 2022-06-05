@@ -6,7 +6,13 @@ require("dotenv").config();
 const { Client, Intents } = require('discord.js');
 const mongoose = require('mongoose');
 
-mongoose.connect("mongodb://localhost/ihs", () => {console.log("Connected to database.")});
+mongoose.connect(process.env.MONGOURI).catch((error: any) => {
+    console.log(`Error connecting to DB: ${error}`)
+});
+
+mongoose.connection.on('connected', () => {console.log(`Connected to DB.`)});
+mongoose.connection.on('disconnected', () => {console.log(`Disconnected from DB.`)});
+mongoose.connection.on('error', (error: any) => {console.log(`Connection Error: ${error}`)});
 
 
 const client = new Client( {intents: [Intents.FLAGS.GUILDS, Intents.FLAGS.GUILD_MESSAGES]} );

@@ -1,4 +1,4 @@
-import { Document, Schema, model, Model } from 'mongoose';
+import { Document, Schema, model } from 'mongoose';
 
 interface Guild extends Document {
     _id: String;
